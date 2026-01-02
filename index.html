@@ -26,7 +26,6 @@ body {
   overflow: hidden;
 }
 
-/* Glow background */
 body::before {
   content: "";
   position: absolute;
@@ -52,19 +51,9 @@ body::before {
   border: 1px solid var(--border);
   box-shadow: 0 30px 80px rgba(0,0,0,0.6);
   text-align: center;
-  animation: pop 0.6s ease;
 }
 
-@keyframes pop {
-  from { transform: scale(0.85); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-
-h1 {
-  margin: 0;
-  font-size: 32px;
-  letter-spacing: 1px;
-}
+h1 { margin: 0; font-size: 32px; }
 
 .subtitle {
   font-size: 13px;
@@ -72,7 +61,6 @@ h1 {
   margin-bottom: 20px;
 }
 
-/* Buttons */
 button {
   background: linear-gradient(135deg,var(--x),#0066ff);
   border: none;
@@ -90,7 +78,6 @@ button:hover {
   box-shadow: 0 0 25px var(--x);
 }
 
-/* Board */
 .board {
   display: none;
   grid-template-columns: repeat(3,100px);
@@ -102,7 +89,6 @@ button:hover {
   width: 100px;
   height: 100px;
   background: rgba(255,255,255,0.2);
-  backdrop-filter: blur(10px);
   border-radius: 22px;
   border: 1px solid var(--border);
   display: flex;
@@ -110,41 +96,15 @@ button:hover {
   align-items: center;
   font-size: 48px;
   cursor: pointer;
-  transition: 0.25s;
 }
 
-.cell:hover {
-  transform: scale(1.08);
-  background: rgba(255,255,255,0.35);
-}
+.X { color: var(--x); text-shadow: 0 0 20px var(--x); }
+.O { color: var(--o); text-shadow: 0 0 20px var(--o); }
 
-.X {
-  color: var(--x);
-  text-shadow: 0 0 20px var(--x);
-}
-
-.O {
-  color: var(--o);
-  text-shadow: 0 0 20px var(--o);
-}
-
-.win {
-  animation: winGlow 1s infinite alternate;
-}
-
-@keyframes winGlow {
-  from { box-shadow: 0 0 10px #00ffcc; }
-  to { box-shadow: 0 0 35px #00ffcc; }
-}
-
-.status {
-  min-height: 25px;
-  font-size: 17px;
-}
-
-.restart {
-  display: none;
-}
+.status { min-height: 25px; font-size: 17px; }
+.restart { display: none; }
+.menu, .difficulty { }
+.difficulty { display: none; }
 </style>
 </head>
 
@@ -152,11 +112,17 @@ button:hover {
 
 <div class="app">
   <h1>TacMind AI</h1>
-  <div class="subtitle">Glassmorphism Tic-Tac-Toe with Unbeatable AI</div>
+  <div class="subtitle">Tic-Tac-Toe with Smart AI</div>
 
   <div class="menu">
-    <button onclick="startGame('single')">Single Player</button>
+    <button onclick="selectMode('single')">Single Player</button>
     <button onclick="startGame('double')">Two Player</button>
+  </div>
+
+  <div class="difficulty">
+    <button onclick="setDifficulty('easy')">Easy</button>
+    <button onclick="setDifficulty('medium')">Medium</button>
+    <button onclick="setDifficulty('hard')">Hard</button>
   </div>
 
   <div class="board" id="board"></div>
@@ -169,6 +135,7 @@ button:hover {
 let board = Array(9).fill("");
 let currentPlayer = "X";
 let mode = "";
+let difficulty = "hard";
 let active = true;
 
 const boardEl = document.getElementById("board");
@@ -181,9 +148,20 @@ const wins = [
   [0,4,8],[2,4,6]
 ];
 
-function startGame(m){
+function selectMode(m){
   mode = m;
   document.querySelector(".menu").style.display = "none";
+  document.querySelector(".difficulty").style.display = "block";
+}
+
+function setDifficulty(d){
+  difficulty = d;
+  document.querySelector(".difficulty").style.display = "none";
+  startGame("single");
+}
+
+function startGame(m){
+  mode = m;
   boardEl.style.display = "grid";
   restartBtn.style.display = "inline-block";
   statusEl.textContent = "Your turn (X)";
@@ -205,26 +183,27 @@ function playerMove(i){
   board[i] = currentPlayer;
   render();
   if(checkEnd()) return;
+
   currentPlayer = "O";
   statusEl.textContent = mode==="single" ? "AI thinking…" : "Player O's turn";
-  if(mode==="single") setTimeout(aiMove, 600);
+
+  if(mode==="single") setTimeout(aiMove, 500);
 }
 
 function aiMove(){
-  let bestScore = -Infinity;
   let move;
-  board.forEach((v,i)=>{
-    if(v===""){
-      board[i]="O";
-      let score = minimax(false);
-      board[i]="";
-      if(score > bestScore){
-        bestScore = score;
-        move = i;
-      }
-    }
-  });
-  board[move]="O";
+
+  if(difficulty==="easy"){
+    move = randomMove();
+  }
+  else if(difficulty==="medium"){
+    move = Math.random() < 0.5 ? randomMove() : bestMove();
+  }
+  else {
+    move = bestMove();
+  }
+
+  board[move] = "O";
   render();
   if(!checkEnd()){
     currentPlayer="X";
@@ -232,9 +211,28 @@ function aiMove(){
   }
 }
 
+function randomMove(){
+  let empty = board.map((v,i)=>v===""?i:null).filter(v=>v!==null);
+  return empty[Math.floor(Math.random()*empty.length)];
+}
+
+function bestMove(){
+  let bestScore = -Infinity, move;
+  board.forEach((v,i)=>{
+    if(v===""){
+      board[i]="O";
+      let score = minimax(false);
+      board[i]="";
+      if(score > bestScore){ bestScore = score; move = i; }
+    }
+  });
+  return move;
+}
+
 function minimax(isMax){
-  let result = evaluate();
-  if(result !== null) return result;
+  let r = evaluate();
+  if(r !== null) return r;
+
   let best = isMax ? -Infinity : Infinity;
   board.forEach((v,i)=>{
     if(v===""){
@@ -248,13 +246,11 @@ function minimax(isMax){
 }
 
 function evaluate(){
-  for(let w of wins){
-    let[a,b,c]=w;
+  for(let [a,b,c] of wins){
     if(board[a] && board[a]===board[b] && board[a]===board[c])
       return board[a]==="O" ? 10 : -10;
   }
-  if(!board.includes("")) return 0;
-  return null;
+  return board.includes("") ? null : 0;
 }
 
 function render(){
@@ -266,16 +262,13 @@ function render(){
 
 function checkEnd(){
   let r = evaluate();
-  if(r === 10){ statusEl.textContent="🤖 AI Wins"; finish(); return true; }
-  if(r === -10){ statusEl.textContent="🎉 You Win"; finish(); return true; }
-  if(r === 0){ statusEl.textContent="😐 Draw"; finish(); return true; }
+  if(r===10){ statusEl.textContent="🤖 AI Wins"; finish(); return true; }
+  if(r===-10){ statusEl.textContent="🎉 You Win"; finish(); return true; }
+  if(r===0){ statusEl.textContent="😐 Draw"; finish(); return true; }
   return false;
 }
 
-function finish(){
-  active=false;
-  document.querySelectorAll(".cell").forEach(c=>c.classList.add("win"));
-}
+function finish(){ active=false; }
 
 function resetGame(){
   board = Array(9).fill("");
