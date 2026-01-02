@@ -180,16 +180,23 @@ function drawBoard(){
 
 function playerMove(i){
   if(!active || board[i]) return;
+
   board[i] = currentPlayer;
   render();
+
   if(checkEnd()) return;
 
-  currentPlayer = "O";
-  statusEl.textContent = mode==="single" ? "AI thinking…" : "Player O's turn";
-
-  if(mode==="single") setTimeout(aiMove, 500);
+  if(mode === "single"){
+    currentPlayer = "O";
+    statusEl.textContent = "AI thinking…";
+    setTimeout(aiMove, 500);
+  } 
+  else {
+    // DOUBLE PLAYER MODE (FIX)
+    currentPlayer = currentPlayer === "X" ? "O" : "X";
+    statusEl.textContent = `Player ${currentPlayer}'s turn`;
+  }
 }
-
 function aiMove(){
   let move;
 
