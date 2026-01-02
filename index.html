@@ -5,141 +5,86 @@
 <title>TacMind AI</title>
 
 <style>
-:root {
+:root{
   --glass: rgba(255,255,255,0.15);
   --border: rgba(255,255,255,0.3);
-  --x: #00f5ff;
-  --o: #ff4fd8;
+  --x:#00f5ff;
+  --o:#ff4fd8;
 }
 
-* { box-sizing: border-box; }
+*{box-sizing:border-box}
 
-body {
-  margin: 0;
-  height: 100vh;
-  background: linear-gradient(135deg,#0f0c29,#302b63,#24243e);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-family: 'Poppins', sans-serif;
-  color: white;
-  overflow: hidden;
+body{
+  margin:0;height:100vh;
+  background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);
+  display:flex;justify-content:center;align-items:center;
+  font-family:Poppins,sans-serif;color:white;
 }
 
-.app {
-  width: 380px;
-  padding: 30px;
-  border-radius: 30px;
-  background: var(--glass);
-  backdrop-filter: blur(18px);
-  border: 1px solid var(--border);
-  box-shadow: 0 30px 80px rgba(0,0,0,0.6);
-  text-align: center;
+.app{
+  width:380px;padding:30px;border-radius:30px;
+  background:var(--glass);
+  backdrop-filter:blur(18px);
+  border:1px solid var(--border);
+  box-shadow:0 30px 80px rgba(0,0,0,.6);
+  text-align:center;
 }
 
-h1 { margin: 0; font-size: 32px; }
+h1{margin:0;font-size:32px}
+.subtitle{font-size:13px;opacity:.7;margin-bottom:20px}
 
-.subtitle {
-  font-size: 13px;
-  opacity: 0.7;
-  margin-bottom: 20px;
+button{
+  background:linear-gradient(135deg,var(--x),#0066ff);
+  border:none;padding:12px 26px;margin:10px;
+  border-radius:40px;font-weight:600;cursor:pointer;
+  transition:.3s;color:#000;
+}
+button:hover{transform:scale(1.1);box-shadow:0 0 25px var(--x)}
+
+.menu,.difficulty{ }
+.difficulty{display:none}
+
+.board{
+  display:none;
+  grid-template-columns:repeat(3,100px);
+  gap:14px;margin:25px auto;
 }
 
-button {
-  background: linear-gradient(135deg,var(--x),#0066ff);
-  border: none;
-  padding: 12px 26px;
-  margin: 10px;
-  border-radius: 40px;
-  color: #000;
-  font-weight: 600;
-  cursor: pointer;
-  transition: 0.3s;
+.cell{
+  width:100px;height:100px;
+  background:rgba(255,255,255,.2);
+  border-radius:22px;border:1px solid var(--border);
+  display:flex;justify-content:center;align-items:center;
+  font-size:48px;cursor:pointer;
 }
 
-button:hover {
-  transform: scale(1.1);
-  box-shadow: 0 0 25px var(--x);
+.X{color:var(--x);text-shadow:0 0 20px var(--x)}
+.O{color:var(--o);text-shadow:0 0 20px var(--o)}
+
+/* RESULT POPUP */
+.overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.6);
+  display:flex;justify-content:center;align-items:center;
+  backdrop-filter:blur(6px);
+  opacity:0;pointer-events:none;
+  transition:.4s;
 }
+.overlay.show{opacity:1;pointer-events:auto}
 
-.board {
-  display: none;
-  grid-template-columns: repeat(3,100px);
-  gap: 14px;
-  margin: 25px auto;
+.result{
+  background:rgba(255,255,255,.2);
+  backdrop-filter:blur(20px);
+  border:1px solid var(--border);
+  border-radius:26px;
+  padding:30px;width:300px;
+  animation:pop .5s forwards;
 }
+@keyframes pop{from{transform:scale(.7)}to{transform:scale(1)}}
 
-.cell {
-  width: 100px;
-  height: 100px;
-  background: rgba(255,255,255,0.2);
-  border-radius: 22px;
-  border: 1px solid var(--border);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 48px;
-  cursor: pointer;
-}
-
-.X { color: var(--x); text-shadow: 0 0 20px var(--x); }
-.O { color: var(--o); text-shadow: 0 0 20px var(--o); }
-
-.menu, .difficulty { }
-.difficulty { display: none; }
-
-/* ---------- RESULT MODAL ---------- */
-.result-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  backdrop-filter: blur(6px);
-  opacity: 0;
-  pointer-events: none;
-  transition: 0.4s;
-}
-
-.result-overlay.show {
-  opacity: 1;
-  pointer-events: all;
-}
-
-.result-box {
-  background: rgba(255,255,255,0.18);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--border);
-  border-radius: 26px;
-  padding: 30px;
-  width: 320px;
-  text-align: center;
-  transform: scale(0.7);
-  animation: popIn 0.5s forwards;
-}
-
-@keyframes popIn {
-  to { transform: scale(1); }
-}
-
-.result-box h2 {
-  font-size: 28px;
-  margin: 0 0 10px;
-}
-
-.result-box p {
-  opacity: 0.8;
-}
-
-.win { color: #00ffcc; text-shadow: 0 0 20px #00ffcc; }
-.lose { color: #ff4f4f; text-shadow: 0 0 20px #ff4f4f; }
-.draw { color: #ffc94f; text-shadow: 0 0 20px #ffc94f; }
-
-.result-actions button {
-  width: 100%;
-  margin-top: 12px;
-}
+.win{color:#00ffcc;text-shadow:0 0 20px #00ffcc}
+.lose{color:#ff4f4f;text-shadow:0 0 20px #ff4f4f}
+.draw{color:#ffc94f;text-shadow:0 0 20px #ffc94f}
 </style>
 </head>
 
@@ -147,10 +92,10 @@ button:hover {
 
 <div class="app">
   <h1>TacMind AI</h1>
-  <div class="subtitle">Tic-Tac-Toe with Smart AI</div>
+  <div class="subtitle">Smart Tic-Tac-Toe</div>
 
   <div class="menu">
-    <button onclick="selectMode('single')">Single Player</button>
+    <button onclick="chooseMode('single')">Single Player</button>
     <button onclick="startGame('double')">Two Player</button>
   </div>
 
@@ -163,123 +108,119 @@ button:hover {
   <div class="board" id="board"></div>
 </div>
 
-<!-- RESULT POPUP -->
-<div class="result-overlay" id="result">
-  <div class="result-box">
+<div class="overlay" id="overlay">
+  <div class="result">
     <h2 id="resultTitle"></h2>
     <p id="resultText"></p>
-    <div class="result-actions">
-      <button onclick="resetGame()">Play Again</button>
-    </div>
+    <button onclick="resetGame()">Play Again</button>
   </div>
 </div>
 
 <script>
-let board = Array(9).fill("");
-let currentPlayer = "X";
-let mode = "";
-let difficulty = "hard";
-let active = true;
+let board=Array(9).fill("");
+let current="X";
+let mode="",difficulty="hard",active=true;
 
-const boardEl = document.getElementById("board");
-const resultOverlay = document.getElementById("result");
-const resultTitle = document.getElementById("resultTitle");
-const resultText = document.getElementById("resultText");
+const boardEl=document.getElementById("board");
+const overlay=document.getElementById("overlay");
+const resultTitle=document.getElementById("resultTitle");
+const resultText=document.getElementById("resultText");
 
-const wins = [
-  [0,1,2],[3,4,5],[6,7,8],
-  [0,3,6],[1,4,7],[2,5,8],
-  [0,4,8],[2,4,6]
+const wins=[
+ [0,1,2],[3,4,5],[6,7,8],
+ [0,3,6],[1,4,7],[2,5,8],
+ [0,4,8],[2,4,6]
 ];
 
-function selectMode(m){
-  mode = m;
-  document.querySelector(".menu").style.display = "none";
-  document.querySelector(".difficulty").style.display = "block";
+function chooseMode(m){
+  mode=m;
+  document.querySelector(".menu").style.display="none";
+  document.querySelector(".difficulty").style.display="block";
 }
 
 function setDifficulty(d){
-  difficulty = d;
-  document.querySelector(".difficulty").style.display = "none";
+  difficulty=d;
+  document.querySelector(".difficulty").style.display="none";
   startGame("single");
 }
 
 function startGame(m){
-  mode = m;
-  boardEl.style.display = "grid";
+  mode=m;
+  boardEl.style.display="grid";
   drawBoard();
 }
 
 function drawBoard(){
   boardEl.innerHTML="";
   board.forEach((_,i)=>{
-    let c = document.createElement("div");
+    const c=document.createElement("div");
     c.className="cell";
-    c.onclick=()=>playerMove(i);
+    c.onclick=()=>move(i);
     boardEl.appendChild(c);
   });
 }
 
-function playerMove(i){
-  if(!active || board[i]) return;
-  board[i] = currentPlayer;
+function move(i){
+  if(!active||board[i])return;
+  board[i]=current;
   render();
-  if(checkEnd()) return;
+  if(checkEnd())return;
 
   if(mode==="single"){
-    currentPlayer="O";
-    setTimeout(aiMove, 500);
-  } else {
-    currentPlayer = currentPlayer==="X" ? "O" : "X";
+    current="O";
+    setTimeout(aiMove,400);
+  }else{
+    current=current==="X"?"O":"X";
   }
 }
 
 function aiMove(){
-  let move = difficulty==="easy" ? randomMove() :
-             difficulty==="medium" && Math.random()<0.5 ? randomMove() :
-             bestMove();
+  let move=
+    difficulty==="easy"?randomMove():
+    difficulty==="medium"&&Math.random()<.5?randomMove():
+    bestMove();
   board[move]="O";
   render();
-  if(!checkEnd()) currentPlayer="X";
+  if(!checkEnd())current="X";
 }
 
 function randomMove(){
-  let e = board.map((v,i)=>v===""?i:null).filter(v=>v!==null);
+  const e=board.map((v,i)=>v===""?i:null).filter(v=>v!==null);
   return e[Math.floor(Math.random()*e.length)];
 }
 
 function bestMove(){
-  let best=-Infinity, move;
+  let best=-Infinity,move;
   board.forEach((v,i)=>{
     if(v===""){
       board[i]="O";
-      let score=minimax(false);
+      let s=minimax(false);
       board[i]="";
-      if(score>best){best=score;move=i;}
+      if(s>best){best=s;move=i;}
     }
   });
   return move;
 }
 
-function minimax(isMax){
+function minimax(max){
   let r=evaluate();
-  if(r!==null) return r;
-  let best=isMax?-Infinity:Infinity;
+  if(r!==null)return r;
+  let best=max?-Infinity:Infinity;
   board.forEach((v,i)=>{
     if(v===""){
-      board[i]=isMax?"O":"X";
-      let score=minimax(!isMax);
+      board[i]=max?"O":"X";
+      let s=minimax(!max);
       board[i]="";
-      best=isMax?Math.max(best,score):Math.min(best,score);
+      best=max?Math.max(best,s):Math.min(best,s);
     }
   });
   return best;
 }
 
 function evaluate(){
-  for(let[w,x,y] of wins){
-    if(board[w]&&board[w]===board[x]&&board[w]===board[y])
-      return board[w]==="O"?10:-10;
+  for(let[a,b,c]of wins){
+    if(board[a]&&board[a]===board[b]&&board[a]===board[c])
+      return board[a]==="O"?10:-10;
   }
   return board.includes("")?null:0;
 }
@@ -292,26 +233,33 @@ function render(){
 }
 
 function checkEnd(){
-  let r=evaluate();
-  if(r===10) showResult("🤖 AI Wins","Better luck next time!","lose");
-  if(r===-10) showResult("🎉 You Win","Amazing move!","win");
-  if(r===0) showResult("😐 Draw","Well played!","draw");
-  return r!==null;
+  const r=evaluate();
+  if(r===null)return false;
+
+  if(r===0){
+    show("😐 Draw","It’s a tie","draw");
+  }else if(mode==="single"){
+    r===10
+      ? show("🤖 AI Wins","Try again","lose")
+      : show("🎉 You Win","Great play","win");
+  }else{
+    show(`🏆 Player ${r===-10?"X":"O"} Wins`,"Well played","win");
+  }
+  return true;
 }
 
-function showResult(title,text,type){
+function show(t,msg,cls){
   active=false;
-  resultTitle.textContent=title;
-  resultTitle.className=type;
-  resultText.textContent=text;
-  resultOverlay.classList.add("show");
+  resultTitle.textContent=t;
+  resultTitle.className=cls;
+  resultText.textContent=msg;
+  overlay.classList.add("show");
 }
 
 function resetGame(){
   board=Array(9).fill("");
-  currentPlayer="X";
-  active=true;
-  resultOverlay.classList.remove("show");
+  current="X";active=true;
+  overlay.classList.remove("show");
   boardEl.style.display="none";
   document.querySelector(".menu").style.display="block";
 }
