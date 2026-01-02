@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Advanced Tic Tac Toe</title>
+
+<style>
+body {
+    margin: 0;
+    height: 100vh;
+    background: radial-gradient(circle, #141e30, #243b55);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Poppins', sans-serif;
+    color: white;
+}
+
+.game {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(14px);
+    padding: 30px;
+    border-radius: 25px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+    text-align: center;
+    width: 360px;
+}
+
+h1 {
+    margin-bottom: 15px;
+}
+
+.menu button, .restart {
+    background: linear-gradient(135deg, #00c6ff, #0072ff);
+    border: none;
+    padding: 12px 22px;
+    margin: 10px;
+    border-radius: 30px;
+    color: white;
+    font-size: 15px;
+    cursor: pointer;
+    transition: 0.25s;
+}
+
+.menu button:hover, .restart:hover {
+    transform: scale(1.08);
+}
+
+.board {
+    display: none;
+    grid-template-columns: repeat(3, 95px);
+    gap: 12px;
+    margin: 25px auto;
+}
+
+.cell {
+    width: 95px;
+    height: 95px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.15);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 46px;
+    cursor: pointer;
+    transition: 0.25s;
+}
+
+.cell:hover {
+    background: rgba(255,255,255,0.3);
+    transform: scale(1.05);
+}
+
+.X {
+    color: #00f7ff;
+    text-shadow: 0 0 15px #00f7ff;
+}
+
+.O {
+    color: #ff4fd8;
+    text-shadow: 0 0 15px #ff4fd8;
+}
+
+.win {
+    animation: glow 1s infinite alternate;
+}
+
+@keyframes glow {
+    from { box-shadow: 0 0 12px #00ffcc; }
+    to { box-shadow: 0 0 30px #00ffcc; }
+}
+
+.status {
+    font-size: 18px;
+    min-height: 25px;
+}
+
+.restart {
+    display: none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="game">
+    <h1>🔥 Tic Tac Toe</h1>
+
+    <div class="menu">
+        <button onclick="startGame('single')">Single Player</button>
+        <button onclick="startGame('double')">Two Player</button>
+    </div>
+
+    <div class="board" id="board"></div>
+
+    <div class="status" id="status"></div>
+    <button class="restart" onclick="resetGame()">Restart</button>
+</div>
+
+<script>
+let board = Array(9).fill("");
+let currentPlayer = "X";
+let mode = "";
+let active = true;
+
+const boardEl = document.getElementById("board");
+const statusEl = document.getElementById("status");
+const restartBtn = document.querySelector(".restart");
+
+const wins = [
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6]
+];
+
+function startGame(m) {
+    mode = m;
+    document.querySelector(".menu").style.display = "none";
+    boardEl.style.display = "grid";
+    restartBtn.style.display = "inline-block";
+    statusEl.textContent = "Your turn (X)";
+    drawBoard();
+}
+
+function drawBoard() {
+    boardEl.innerHTML = "";
+    board.forEach((_, i) => {
+        const c = document.createElement("div");
+        c.className = "cell";
+        c.onclick = () => move(i);
+        boardEl.appendChild(c);
+    });
+}
+
+function move(i) {
+    if (!active || board[i]) return;
+
+    board[i] = currentPlayer;
+    update();
+
+    if (checkEnd()) return;
+
+    currentPlayer = currentPlayer === "X" ? "O" : "X";
+    statusEl.textContent = currentPlayer === "X" ? "Your turn" : "AI thinking...";
+
+    if (mode === "single" && currentPlayer === "O") {
+        setTimeout(aiMove, 500);
+    }
+}
+
+function aiMove() {
+    let bestScore = -Infinity;
+    let bestMove;
+
+    board.forEach((v, i) => {
+        if (v === "") {
+            board[i] = "O";
+            let score = minimax(board, 0, false);
+            board[i] = "";
+            if (score > bestScore) {
+                bestScore = score;
+                bestMove = i;
+            }
+        }
+    });
+
+    board[bestMove] = "O";
+    update();
+
+    if (!checkEnd()) {
+        currentPlayer = "X";
+        statusEl.textContent = "Your turn";
+    }
+}
+
+function minimax(b, depth, isMax) {
+    let result = evaluate();
+    if (result !== null) return result;
+
+    if (isMax) {
+        let best = -Infinity;
+        b.forEach((v,i)=>{
+            if(v===""){
+                b[i]="O";
+                best = Math.max(best, minimax(b, depth+1, false));
+                b[i]="";
+            }
+        });
+        return best;
+    } else {
+        let best = Infinity;
+        b.forEach((v,i)=>{
+            if(v===""){
+                b[i]="X";
+                best = Math.min(best, minimax(b, depth+1, true));
+                b[i]="";
+            }
+        });
+        return best;
+    }
+}
+
+function evaluate() {
+    for (let w of wins) {
+        let [a,b,c]=w;
+        if (board[a] && board[a]===board[b] && board[a]===board[c]) {
+            return board[a]==="O" ? 10 : -10;
+        }
+    }
+    if (!board.includes("")) return 0;
+    return null;
+}
+
+function update() {
+    document.querySelectorAll(".cell").forEach((c,i)=>{
+        c.textContent = board[i];
+        c.className = "cell " + (board[i] || "");
+    });
+}
+
+function checkEnd() {
+    let score = evaluate();
+    if (score === 10) {
+        statusEl.textContent = "🤖 AI Wins!";
+        endGame();
+        return true;
+    }
+    if (score === -10) {
+        statusEl.textContent = "🎉 You Win!";
+        endGame();
+        return true;
+    }
+    if (score === 0) {
+        statusEl.textContent = "😐 Draw";
+        endGame();
+        return true;
+    }
+    return false;
+}
+
+function endGame() {
+    active = false;
+    document.querySelectorAll(".cell").forEach(c=>c.classList.add("win"));
+}
+
+function resetGame() {
+    board = Array(9).fill("");
+    currentPlayer = "X";
+    active = true;
+    boardEl.style.display = "none";
+    restartBtn.style.display = "none";
+    document.querySelector(".menu").style.display = "block";
+    statusEl.textContent = "";
+}
+</script>
+
+</body>
+</html>
