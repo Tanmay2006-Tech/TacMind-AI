@@ -26,22 +26,6 @@ body {
   overflow: hidden;
 }
 
-body::before {
-  content: "";
-  position: absolute;
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle,var(--x),transparent 70%);
-  filter: blur(120px);
-  top: -120px;
-  left: -120px;
-  animation: float 10s infinite alternate;
-}
-
-@keyframes float {
-  to { transform: translate(220px,220px); }
-}
-
 .app {
   width: 380px;
   padding: 30px;
@@ -101,10 +85,61 @@ button:hover {
 .X { color: var(--x); text-shadow: 0 0 20px var(--x); }
 .O { color: var(--o); text-shadow: 0 0 20px var(--o); }
 
-.status { min-height: 25px; font-size: 17px; }
-.restart { display: none; }
 .menu, .difficulty { }
 .difficulty { display: none; }
+
+/* ---------- RESULT MODAL ---------- */
+.result-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  pointer-events: none;
+  transition: 0.4s;
+}
+
+.result-overlay.show {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.result-box {
+  background: rgba(255,255,255,0.18);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: 26px;
+  padding: 30px;
+  width: 320px;
+  text-align: center;
+  transform: scale(0.7);
+  animation: popIn 0.5s forwards;
+}
+
+@keyframes popIn {
+  to { transform: scale(1); }
+}
+
+.result-box h2 {
+  font-size: 28px;
+  margin: 0 0 10px;
+}
+
+.result-box p {
+  opacity: 0.8;
+}
+
+.win { color: #00ffcc; text-shadow: 0 0 20px #00ffcc; }
+.lose { color: #ff4f4f; text-shadow: 0 0 20px #ff4f4f; }
+.draw { color: #ffc94f; text-shadow: 0 0 20px #ffc94f; }
+
+.result-actions button {
+  width: 100%;
+  margin-top: 12px;
+}
 </style>
 </head>
 
@@ -126,9 +161,17 @@ button:hover {
   </div>
 
   <div class="board" id="board"></div>
+</div>
 
-  <div class="status" id="status"></div>
-  <button class="restart" onclick="resetGame()">Restart</button>
+<!-- RESULT POPUP -->
+<div class="result-overlay" id="result">
+  <div class="result-box">
+    <h2 id="resultTitle"></h2>
+    <p id="resultText"></p>
+    <div class="result-actions">
+      <button onclick="resetGame()">Play Again</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -139,8 +182,9 @@ let difficulty = "hard";
 let active = true;
 
 const boardEl = document.getElementById("board");
-const statusEl = document.getElementById("status");
-const restartBtn = document.querySelector(".restart");
+const resultOverlay = document.getElementById("result");
+const resultTitle = document.getElementById("resultTitle");
+const resultText = document.getElementById("resultText");
 
 const wins = [
   [0,1,2],[3,4,5],[6,7,8],
@@ -163,8 +207,6 @@ function setDifficulty(d){
 function startGame(m){
   mode = m;
   boardEl.style.display = "grid";
-  restartBtn.style.display = "inline-block";
-  statusEl.textContent = "Your turn (X)";
   drawBoard();
 }
 
@@ -180,111 +222,98 @@ function drawBoard(){
 
 function playerMove(i){
   if(!active || board[i]) return;
-
   board[i] = currentPlayer;
   render();
-
   if(checkEnd()) return;
 
-  if(mode === "single"){
-    currentPlayer = "O";
-    statusEl.textContent = "AI thinking…";
+  if(mode==="single"){
+    currentPlayer="O";
     setTimeout(aiMove, 500);
-  } 
-  else {
-    // DOUBLE PLAYER MODE (FIX)
-    currentPlayer = currentPlayer === "X" ? "O" : "X";
-    statusEl.textContent = `Player ${currentPlayer}'s turn`;
+  } else {
+    currentPlayer = currentPlayer==="X" ? "O" : "X";
   }
 }
+
 function aiMove(){
-  let move;
-
-  if(difficulty==="easy"){
-    move = randomMove();
-  }
-  else if(difficulty==="medium"){
-    move = Math.random() < 0.5 ? randomMove() : bestMove();
-  }
-  else {
-    move = bestMove();
-  }
-
-  board[move] = "O";
+  let move = difficulty==="easy" ? randomMove() :
+             difficulty==="medium" && Math.random()<0.5 ? randomMove() :
+             bestMove();
+  board[move]="O";
   render();
-  if(!checkEnd()){
-    currentPlayer="X";
-    statusEl.textContent="Your turn (X)";
-  }
+  if(!checkEnd()) currentPlayer="X";
 }
 
 function randomMove(){
-  let empty = board.map((v,i)=>v===""?i:null).filter(v=>v!==null);
-  return empty[Math.floor(Math.random()*empty.length)];
+  let e = board.map((v,i)=>v===""?i:null).filter(v=>v!==null);
+  return e[Math.floor(Math.random()*e.length)];
 }
 
 function bestMove(){
-  let bestScore = -Infinity, move;
+  let best=-Infinity, move;
   board.forEach((v,i)=>{
     if(v===""){
       board[i]="O";
-      let score = minimax(false);
+      let score=minimax(false);
       board[i]="";
-      if(score > bestScore){ bestScore = score; move = i; }
+      if(score>best){best=score;move=i;}
     }
   });
   return move;
 }
 
 function minimax(isMax){
-  let r = evaluate();
-  if(r !== null) return r;
-
-  let best = isMax ? -Infinity : Infinity;
+  let r=evaluate();
+  if(r!==null) return r;
+  let best=isMax?-Infinity:Infinity;
   board.forEach((v,i)=>{
     if(v===""){
-      board[i] = isMax ? "O" : "X";
-      let score = minimax(!isMax);
-      board[i] = "";
-      best = isMax ? Math.max(best, score) : Math.min(best, score);
+      board[i]=isMax?"O":"X";
+      let score=minimax(!isMax);
+      board[i]="";
+      best=isMax?Math.max(best,score):Math.min(best,score);
     }
   });
   return best;
 }
 
 function evaluate(){
-  for(let [a,b,c] of wins){
-    if(board[a] && board[a]===board[b] && board[a]===board[c])
-      return board[a]==="O" ? 10 : -10;
+  for(let[w,x,y] of wins){
+    if(board[w]&&board[w]===board[x]&&board[w]===board[y])
+      return board[w]==="O"?10:-10;
   }
-  return board.includes("") ? null : 0;
+  return board.includes("")?null:0;
 }
 
 function render(){
   document.querySelectorAll(".cell").forEach((c,i)=>{
-    c.textContent = board[i];
-    c.className = "cell " + (board[i] || "");
+    c.textContent=board[i];
+    c.className="cell "+(board[i]||"");
   });
 }
 
 function checkEnd(){
-  let r = evaluate();
-  if(r===10){ statusEl.textContent="🤖 AI Wins"; finish(); return true; }
-  if(r===-10){ statusEl.textContent="🎉 You Win"; finish(); return true; }
-  if(r===0){ statusEl.textContent="😐 Draw"; finish(); return true; }
-  return false;
+  let r=evaluate();
+  if(r===10) showResult("🤖 AI Wins","Better luck next time!","lose");
+  if(r===-10) showResult("🎉 You Win","Amazing move!","win");
+  if(r===0) showResult("😐 Draw","Well played!","draw");
+  return r!==null;
 }
 
-function finish(){ active=false; }
+function showResult(title,text,type){
+  active=false;
+  resultTitle.textContent=title;
+  resultTitle.className=type;
+  resultText.textContent=text;
+  resultOverlay.classList.add("show");
+}
 
 function resetGame(){
-  board = Array(9).fill("");
+  board=Array(9).fill("");
   currentPlayer="X";
   active=true;
+  resultOverlay.classList.remove("show");
   boardEl.style.display="none";
-  restartBtn.style.display="none";
   document.querySelector(".menu").style.display="block";
-  statusEl.textContent="";
 }
 </script>
 
